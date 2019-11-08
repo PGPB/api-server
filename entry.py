@@ -1,10 +1,18 @@
 import asyncio
+
 from aiohttp import web
-# import ssl
+from aiohttp_session import session_middleware
+from aiohttp_session.cookie_storage import EncryptedCookieStorage
+
+import base64
+from cryptography import fernet
 
 import api
 import api.settings
 
+cookie_key = fernet.Fernet.generate_key()
+cookie_secret_key = base64.urlsafe_b64decode(cookie_key)
+app_secret_key = cookie_key.decode('UTF-8')
 
 try:
     import uvloop
@@ -12,8 +20,12 @@ try:
 except ImportError:
     print("uvloop is not available")
 
-app = web.Application()
+app = web.Application(middlewares=[
+    session_middleware(EncryptedCookieStorage(cookie_secret_key))
+])
+app['secret_key'] = str(app_secret_key)
 api_app = api.create_app(config=api.settings.load_config())
+
 app.add_subapp('/api', api_app)
 
 if __name__ == '__main__':
