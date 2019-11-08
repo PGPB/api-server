@@ -10,8 +10,8 @@ __all__ = ('create_app',)
 def create_app(config: dict):
     app = web.Application()
     app['config'] = config
-    app.on_startup.append(on_start)
-    app.on_cleanup.append(on_shutdown)
+    # app.on_startup.append(on_start)
+    # app.on_cleanup.append(on_shutdown)
     setup_routes(app)
 
     return app
