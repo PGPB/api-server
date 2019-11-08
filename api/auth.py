@@ -1,6 +1,7 @@
 from aiohttp import web
 from time import time
 import jwt
+import json
 
 from .model import *
 
@@ -11,6 +12,7 @@ refresh_lives = 3600
 
 
 async def login_handler(request):
+    # not working
     login = request.query.get('login')
     password = request.query.get('password')
 
@@ -26,17 +28,18 @@ async def logout_handler(request):
 
 
 async def signup_handler(request):
-    login = request.query.get('login')
-    password = request.query.get('password')
-
-    data = {'login': login, 'password': password, 'access': []}
-    result = await User.create(request.app['db'], data)
-    if result:
+    try:
+        if not request.has_body:
+            raise Exception('No data provided')
+        data = await request.json()
+        result = await create_user(data)
         return web.json_response({'user_id': result}, status=201)
-    return web.json_response({'status': 'failed'}, status=500)
+    except Exception as e:
+        return web.Response(text=str(e), status=400)
 
 
 async def getuser_handler(request):
+    # not working
     id = request.query.get('id')
     result = await User.get(request.app['db'], id)
     return web.json_response(result)
