@@ -20,7 +20,7 @@ def create_app(config: dict):
 async def on_start(app):
     try:
         app['db_conn'] = AsyncIOMotorClient(app['config']['DB_URL'])
-        app['db'] = app['db_conn']
+        app['db'] = app['db_conn'].pgpb
         print('DB connecting')
     except Exception as e:
         print('There are some problems with DB connection')
