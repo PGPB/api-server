@@ -12,15 +12,15 @@ refresh_lives = 3600
 
 
 async def login_handler(request):
-    # not working
+    """ Authentication: Return tokens if credentials are right """
     login = request.query.get('login')
     password = request.query.get('password')
 
-    user = await User.credentials(request.app['db'], login, password)
+    user = await get_user_by_credentials(login, password)
     if user:
-        response = create_tokens(request.config_dict['secret_key'], user['login'], user['access'])
-        return web.json_response(response)
-    return web.HTTPUnauthorized()
+        tokens = create_tokens(request.config_dict['secret_key'], user['_id'], user['status'])
+        return web.json_response(tokens)
+    return web.HTTPBadRequest(text='Incorrect login or password')
 
 
 async def logout_handler(request):
@@ -28,6 +28,7 @@ async def logout_handler(request):
 
 
 async def signup_handler(request):
+    """" Registration: Return user_id """
     try:
         if not request.has_body:
             raise Exception('No data provided')
@@ -62,6 +63,7 @@ def permits(request, permission):
 
 #
 def create_tokens(key, user, access):
+    """ Return dict with access token """
     access_payload = {
         'user_id': user,
         'expires': time() + access_lives,
@@ -74,7 +76,7 @@ def create_tokens(key, user, access):
     # save refreshToken
     access_encoded = jwt.encode(access_payload, key).decode('UTF-8')
     # refresh_encoded = jwt.encode(refresh_payload, key).decode('UTF-8')
-    response = {'accessToken': access_encoded}  # , 'refreshToken': refresh_encoded}
+    response = {'access_token': access_encoded}  # , 'refresh_token': refresh_encoded}
     return response
 
 
