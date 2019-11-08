@@ -1,23 +1,15 @@
-from time import time
-start = time()
-from ast import literal_eval
-import pprint
 from mongoengine import *
+from datetime import datetime
 
 connect('testmongoengine')
 
 
 class User(Document):
-    login = StringField(required=True)
+    login = StringField(required=True, unique=True)
     password = StringField(required=True)
-
-
-# for i in range(1000, 2000):
-#     user = User(login='user'+str(i), password='pswd'+str(i)).save()
-# for user in User.objects:
-#     data = literal_eval(user.to_json())
-#     try:
-#         pprint.pprint(data)
-#     except KeyError:
-#         print('no login')
-# print(time() - start)
+    created_at = DateTimeField(default=datetime.utcnow())
+    updated_at = DateTimeField(default=datetime.utcnow())
+    first_name = StringField(required=True)
+    middle_name = StringField()
+    last_name = StringField(required=True)
+    status = IntField(required=True, default=0)
