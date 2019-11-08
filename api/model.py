@@ -2,28 +2,27 @@ import asyncio
 import pymongo.errors
 from bson.json_util import dumps
 from bson.objectid import ObjectId
+import mongoengine
+
+from .db import *
 
 
-class User:
-    @staticmethod
-    async def create(db, data):
-        result = await db.users.insert_one(data)
-        return str(result.inserted_id)
-
-    @staticmethod
-    async def get(db, id):
-        result = await db.users.find_one({'_id': ObjectId(id)}, {'login': 1, 'access': 1})
-        if result:
-            result['_id'] = str(result['_id'])
-            return result
-        return {'status': 'not found'}
-
-    @staticmethod
-    async def credentials(db, login, password):
-        result = await db.users.find_one({'login': login, 'password': password}, {'login': 1, 'access': 1})
-        if result:
-            result['_id'] = str(result['_id'])
-            return result
-        return False
+async def create_user(data):
+    try:
+        user = User(
+            login=data['login'],
+            password=data['password'],
+            first_name=data['first_name'],
+            middle_name=data['middle_name'],
+            last_name=data['last_name']
+        ).save()
+        return str(user.pk)
+    except mongoengine.errors.NotUniqueError:
+        raise Exception('Login has occupied already')
+    except KeyError as e:
+        raise Exception(f'{e} field is not provided')
 
 
+async def get_user_by_credentials(login, password):
+    user = User.objects(login=login, password=password).first()
+    ...
