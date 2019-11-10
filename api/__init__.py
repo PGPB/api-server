@@ -7,9 +7,9 @@ from .routes import setup_routes
 __all__ = ('create_app',)
 
 
-def create_app(config: dict):
+def create_app(config=None):
     app = web.Application()
-    app['config'] = config
+    # app['config'] = config
     # app.on_startup.append(on_start)
     # app.on_cleanup.append(on_shutdown)
     setup_routes(app)
