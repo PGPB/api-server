@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .model import *
 
-__all__ = ('login_handler', 'permits', 'logout_handler', 'signup_handler', 'getuser_handler', )
+__all__ = ('login_handler', 'permits', 'logout_handler', 'signup_handler', 'getuser_handler', 'update_token')
 
 
 async def login_handler(request):
@@ -38,6 +38,20 @@ async def signup_handler(request):
         return web.Response(text=str(e), status=400)
 
 
+async def update_token(request):
+    """ Exchange refresh token to new pair of tokens """
+    token = request.headers.get('Authorization')
+    if not token:
+        raise web.HTTPUnauthorized(text='Token is not authorized')
+    # check has user this token?
+    # deactivate old token
+    payload = decode_token(token)
+    is_token_valid(payload)
+    user = await get_user_by_id(payload['user_id']['$oid'])
+    tokens = create_tokens(config['JWT_KEY'], user['_id']['$oid'], user['status'], config['JWT_ALGORITHM'])
+    return web.json_response(tokens)
+
+
 async def getuser_handler(request):
     # not working
     id = request.query.get('id')
@@ -51,17 +65,13 @@ def permits(request, permission):
     if not token:
         raise web.HTTPUnauthorized(text='Token is not provided')
 
-    try:
-        payload = jwt.decode(token, config['JWT_KEY'], algorithms=[config['JWT_ALGORITHM']])
-    except (jwt.exceptions.InvalidSignatureError, jwt.exceptions.DecodeError):
-        raise web.HTTPUnauthorized(text='Invalid token')
-
+    payload = decode_token(token)
     is_token_valid(payload)
     if permission > payload['access']:
         raise web.HTTPForbidden()
 
 
-#
+#  ===========
 def create_tokens(key, user_id, access: int, algorithm) -> dict:
     """ Return access and refresh tokens """
     access_payload = {
@@ -80,7 +90,15 @@ def create_tokens(key, user_id, access: int, algorithm) -> dict:
     return response
 
 
-def is_token_valid(payload):
+def decode_token(token: str) -> dict:
+    try:
+        payload = jwt.decode(token, config['JWT_KEY'], algorithms=[config['JWT_ALGORITHM']])
+        return payload
+    except (jwt.exceptions.InvalidSignatureError, jwt.exceptions.DecodeError):
+        raise web.HTTPUnauthorized(text='Invalid token')
+
+
+def is_token_valid(payload: dict):
     if payload['expires'] < time():
         raise web.HTTPUnauthorized(text='Token expired')
 
