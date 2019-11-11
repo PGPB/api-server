@@ -28,3 +28,13 @@ async def get_user_by_credentials(login, password):
     if user:
         return json.loads((user.to_json()))
     return None
+
+
+async def get_user_by_id(user_id: str):
+    """ Return ... or None if user don't exist"""
+    # print(user_id)
+    # print(type(user_id))
+    user = User.objects(pk=ObjectId(user_id)).only('status').first()
+    if user:
+        return json.loads((user.to_json()))
+    return None
